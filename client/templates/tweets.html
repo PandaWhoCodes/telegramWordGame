@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Research Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="{{url_for('static', filename='css/bootstrap.css')}}"
+      rel="stylesheet"
+      type="text/css"
+      media="all"
+    />
+    <link
+      href="{{url_for('static', filename='css/theme.css')}}"
+      rel="stylesheet"
+      type="text/css"
+      media="all"
+    />
+    <link
+      href="{{url_for('static', filename='css/custom.css')}}"
+      rel="stylesheet"
+      type="text/css"
+      media="all"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:200,300,400,400i,500,600,700%7CMerriweather:300,300i"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://fonts.googleapis.com/css?family=Open+Sans"
+    />
+  </head>
+
+  <body>
+    <div class="row">
+      <div class="col-md-4"></div>
+      <div class="col-md-4">
+        <h1
+          class="text-center"
+          style="font-family: 'Open Sans', sans-serif; font-weight: 600"
+        >
+          Research Assistant
+        </h1>
+        <h3 id="title" class="text-center">Loading Data...</h3>
+      </div>
+      <div class="col-md-4"></div>
+    </div>
+    <div id="the_box">
+      <h5 id="title2"></h5>
+      <!-- <input type="search" class="light-table-filter" data-table="order-table" placeholder="Filter" id="filter" onkeyup="filter_this()"> -->
+      <!-- <button onclick="exportTableToCSV()">Export To CSV</button> -->
+      <table
+        class="border--round table--alternate-row table-responsive"
+        id="the_table1"
+        style="width: 100%"
+      >
+        <thead id="thead"></thead>
+        <tbody id="tbody" align="left"></tbody>
+      </table>
+    </div>
+  </body>
+  <script src="{{url_for('static', filename='js/jquery-3.1.1.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/jquery.steps.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/scripts.js')}}"></script>
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="https://cdn.datatables.net/v/dt/dt-1.10.18/b-1.5.4/b-html5-1.5.4/kt-2.5.0/datatables.min.css"
+  />
+  <script
+    type="text/javascript"
+    src="https://cdn.datatables.net/v/dt/dt-1.10.18/b-1.5.4/b-html5-1.5.4/kt-2.5.0/datatables.min.js"
+  ></script>
+  <script>
+    // set_title();
+    var topic = "{{sess}}";
+    on_load();
+
+    function initialize_table() {
+      var op = getUrlParameter("op");
+
+      var target;
+      var order = [];
+      if (op == "entities") {
+        order = [[1, "desc"]];
+        target = [1];
+      }
+      $("#the_table1").DataTable({
+        // dom: 'Bfrtip',
+        dom: "Bfrtip",
+        pageLength: 100,
+        order: order,
+        lengthMenu: [
+          [100, 200, 500, -1],
+          [100, 200, 500, "All"],
+        ],
+        // paging: true,
+        aaSorting: [],
+        columnDefs: [
+          {
+            className: "dt-right",
+            targets: target,
+          },
+        ],
+        drawCallback: function () {
+          var page_min = 100;
+          var $api = this.api();
+          var pages = $api.page.info().pages;
+          var rows = $api.data().length;
+          set_title(rows);
+          // Tailor the settings based on the row count
+          if (rows <= page_min) {
+            $("#the_table_paginate").hide();
+            // Not enough rows for really any features, hide filter/pagination/length
+          } else {
+            // SHow everything
+            $("#the_table_paginate").show();
+          }
+        },
+        buttons: [
+          {
+            extend: "csv",
+            text: "Export to CSV",
+            filename: function () {
+              var id = topic;
+              var op = getUrlParameter("op");
+              var searchVal = $(".dataTables_filter input").val();
+              var name = "";
+              if (searchVal.length > 0) {
+                name = id + "_" + op + "_" + searchVal;
+              } else {
+                name = id + "_" + op;
+              }
+              return name;
+            },
+            exportOptions: {
+              modifier: {
+                page: "all",
+              },
+            },
+          },
+          // ,"pageLength"
+        ],
+      });
+    }
+
+    function getUrlParameter(sParam) {
+      var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split("&"),
+        sParameterName,
+        i;
+
+      for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split("=");
+
+        if (sParameterName[0] === sParam) {
+          return sParameterName[1] === undefined
+            ? true
+            : decodeURIComponent(sParameterName[1]);
+        }
+      }
+    }
+
+    function set_title(number) {
+      var titles = {
+        entities: "Entities",
+        entity: "Entities",
+        links: "Links",
+        mentions: "mentions",
+        influencers: "influencer(s)",
+        popular: "popular tweets",
+        links: "links",
+        terms: "key terms",
+        userinlist: "lists",
+        userlist: "lists",
+        popular: "Influencers",
+      };
+      var op = getUrlParameter("op");
+      var id = topic;
+      if (op == "tweets") {
+        $("#title").text(
+          number + " " + titles[op] + " from " + id + " (retweets removed)"
+        );
+      } else {
+        $("#title").text("Showing " + titles[op] + " for " + topic);
+      }
+    }
+
+    function has_local(query) {
+      var test_val = JSON.parse(localStorage.getItem(query));
+      if (!test_val) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    function on_load() {
+      console.log("Onload");
+      var op = getUrlParameter("op");
+      console.log(op);
+      if (op == "entities" && has_local("ra_entities_list")) {
+        display_entities(JSON.parse(localStorage.getItem("ra_entities_list")));
+      } else if (op == "links" && has_local("ra_links")) {
+        display_links(JSON.parse(localStorage.getItem("ra_links")));
+      }
+    }
+
+    function display_links(data) {
+      // set_title(data.length);
+      var text = "";
+      console.log(data);
+      var tweet_table_html = "";
+      set_title();
+      var thead = "<tr><th>Link</th></tr>";
+      for (var i = 0; i < data.length; i++) {
+        tweet_table_html +=
+          "<tr><td>" +
+          "<a href='" +
+          data[i]["internal_link"] +
+          "' target='_blank'>" +
+          data[i]["internal_link"] +
+          "</a>" +
+          "</td></tr>";
+      }
+      $("#thead").html(thead);
+      $("#tbody").html(tweet_table_html);
+      initialize_table();
+    }
+
+    function display_entities(data) {
+      // set_title(data.length);
+      var text = "";
+      var tweet_table_html = "";
+      set_title();
+      data = sortByFrequency(data);
+      var thead = "<tr><th>Entity</th><th>Frequency</th></tr>";
+      for (var i = 0; i < data.length; i++) {
+        tweet_table_html +=
+          "<tr><td>" +
+          data[i][0] +
+          "</td>" +
+          "<td>" +
+          data[i][1] +
+          "</td></tr  >";
+      }
+      $("#thead").html(thead);
+      $("#tbody").html(tweet_table_html);
+      initialize_table();
+    }
+
+    function sortByFrequency(array) {
+      var frequency = {};
+      // set all initial frequencies for each word to zero
+      array.forEach(function (value) {
+        frequency[value] = 0;
+      });
+      // create new array with words and their frequencies
+      var uniques = array.filter(function (value) {
+        return ++frequency[value] == 1;
+      });
+      // sort words by abc order
+      // return frequency;
+
+      var dict = frequency;
+      var items = Object.keys(dict).map(function (key) {
+        return [key, dict[key]];
+      });
+
+      // Sort the array based on the second element
+      items.sort(function (first, second) {
+        return second[1] - first[1];
+      });
+      return items;
+    }
+  </script>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+</html>

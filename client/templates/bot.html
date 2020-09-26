@@ -1,0 +1,155 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"  crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/chat_interface.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/article.css')}}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans:300|Open+Sans:300|Oxygen|Material+Icons" rel="stylesheet">
+	<title>Word Scramble</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+
+<body>
+    <div class="container">
+    <!-- <br/> -->
+    <div class="row">
+      <div class="col-md-2"></div>
+        <div class="col-md-8" style="" class="chat_div">
+            <div class="chat_window">
+                <div class="top_menu">
+                    <div class="title" id="title">Word Scramble</div>
+                </div>
+                <ul class="messages" id="messages"></ul>
+                <div class="bottom_wrapper clearfix">
+                    <div class="message_input_wrapper">
+                        <input id="msg_input" class="message_input" placeholder="Use /start to get a new word and start the game" />
+                    </div>
+                    <div class="send_message" id="send_button">
+                        <!-- <div class="icon" onclick="send_message()">
+                            <div class="text" style="color:black">Send</div>
+                        </div> -->
+                        <button id="submit_message" type="button" class="btn btn-success" style="color:black" onclick="send_message();">Send</button>
+                    </div>
+                </div>
+            </div>
+            <div class="message_template">
+                <li class="message">
+                    <div class="avatar f_avatar"></div>
+                    <div class="text_wrapper">
+                        <div class="text"></div>
+                        <div class="timestamp"></div>
+                    </div>
+                </li>
+            </div>
+            <br />
+            <br />
+        </div>
+        <div class="col-md-2"></div>
+  </div>
+</body>
+
+<footer>
+</footer>
+<script src="{{url_for('static',filename='js/main.js')}}"></script>
+
+  <script type="text/javascript">
+//   get_old_conversation();
+//   set_title();
+
+var input = document.getElementById("msg_input");
+
+// Execute a function when the user releases a key on the keyboard
+input.addEventListener("keyup", function(event) {
+  // Number 13 is the "Enter" key on the keyboard
+  if (event.keyCode === 13) {
+    // Cancel the default action, if needed
+    event.preventDefault();
+    // Trigger the button element with a click
+    document.getElementById("submit_message").click();
+  }
+});
+
+
+  var sp = "";
+  if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+   $("#send_button").hide();
+//    $(".message_input_wrapper").append('<span id="sp" style="font-size: x-large;">Press Enter to Submit</span>');
+   // $("#msg_input").attr("placeholder", "");
+   $(".bottom_wrapper").css({"padding": "0px 0px"});
+   $("#msg_input").attr("onfocus", "hid();");
+   $("#msg_input").attr("onblur", "vi();");
+   $(".message_input_wrapper").css("width", "98%");
+   sp = document.getElementById('sp');
+
+}
+
+
+function hid(){
+	sp.style.display = "none";
+}
+function vi(){
+	if(!document.getElementById('msg_input').value){
+		sp.style.display = "inline-block";
+	}else{
+		hid();
+	}
+}
+
+
+    function send_message(start=false)
+    {
+      var user_inp = $("#msg_input").val();
+      var myKeyVals = {"text":user_inp};
+      console.log(myKeyVals);
+      $("#msg_input").val("");
+    showUserMessage(user_inp,getCurrentTimestamp());
+    $.ajax({
+      type: 'POST',
+      url:  "/" + "input",
+      data: myKeyVals,
+      // dataType: 'json',
+      success: function(response) {
+          console.log(response);
+          showBotMessage(response["text"],getCurrentTimestamp());
+      }
+        });
+      }
+
+
+function scrollToBottom(id){
+   var div = document.getElementById(id);
+   div.scrollTop = div.scrollHeight - div.clientHeight;
+}
+function capitalize(s)
+{
+  if (typeof s !== 'string')
+  return '';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+        }
+    }
+  }
+
+
+  </script>
+</html>
