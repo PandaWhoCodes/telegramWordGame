@@ -1,5 +1,9 @@
 from configparser import ConfigParser
-from .create import create_connection
+
+try:
+    from .create import create_connection
+except ImportError:
+    from create import create_connection
 import pymysql
 
 parser = ConfigParser()
@@ -49,10 +53,26 @@ def insert_into_user_words(user_id, word):
 
 
 def get_last_user_word(user_id):
-    sql_query = """SELECT word FROM user_words where user_id =%s ORDER BY id DESC limit 1;"""
+    sql_query = (
+        """SELECT word FROM user_words where user_id =%s ORDER BY id DESC limit 1;"""
+    )
 
     return run_query(sql_query, [user_id])
 
 
+def get_users():
+    sql_query = """SELECT email FROM users;"""
+    return run_query(sql_query)
+
+
+def get_user_data(user_id):
+    sql = """SELECT d.input_word,u.word
+    FROM user_words u LEFT JOIN 
+    user_data d
+    ON u.word = d.word
+    WHERE u.user_id = %s"""
+    return run_query(sql, [user_id])
+
+
 if __name__ == "__main__":
-    print(get_last_user_word(1))
+    print(get_users())

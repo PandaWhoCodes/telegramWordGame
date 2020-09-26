@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Research Assistant</title>
+    <title>Scramble Results</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       href="{{url_for('static', filename='css/bootstrap.css')}}"
@@ -45,7 +45,7 @@
           class="text-center"
           style="font-family: 'Open Sans', sans-serif; font-weight: 600"
         >
-          Research Assistant
+          Scramble
         </h1>
         <h3 id="title" class="text-center">Loading Data...</h3>
       </div>
@@ -79,7 +79,6 @@
   ></script>
   <script>
     // set_title();
-    var topic = "{{sess}}";
     on_load();
 
     function initialize_table() {
@@ -168,27 +167,11 @@
     }
 
     function set_title(number) {
-      var titles = {
-        entities: "Entities",
-        entity: "Entities",
-        links: "Links",
-        mentions: "mentions",
-        influencers: "influencer(s)",
-        popular: "popular tweets",
-        links: "links",
-        terms: "key terms",
-        userinlist: "lists",
-        userlist: "lists",
-        popular: "Influencers",
-      };
       var op = getUrlParameter("op");
-      var id = topic;
-      if (op == "tweets") {
-        $("#title").text(
-          number + " " + titles[op] + " from " + id + " (retweets removed)"
-        );
+      if (op) {
+        $("#title").text("All users");
       } else {
-        $("#title").text("Showing " + titles[op] + " for " + topic);
+        $("#title").text("Showing results for " + op);
       }
     }
 
@@ -205,50 +188,69 @@
       console.log("Onload");
       var op = getUrlParameter("op");
       console.log(op);
-      if (op == "entities" && has_local("ra_entities_list")) {
-        display_entities(JSON.parse(localStorage.getItem("ra_entities_list")));
-      } else if (op == "links" && has_local("ra_links")) {
-        display_links(JSON.parse(localStorage.getItem("ra_links")));
-      }
+      get_data();
+      set_title();
     }
 
-    function display_links(data) {
-      // set_title(data.length);
+    function get_data() {
+      var op = getUrlParameter("op");
+      var end_point = "";
+      var myKeyVals = {};
+      if (op) {
+        end_point = "/get_user";
+        myKeyVals["email"] = op;
+      } else {
+        end_point = "/get_users";
+      }
+      console.log("Getting data", end_point);
+
+      $.ajax({
+        type: "GET",
+        url: end_point,
+        data: myKeyVals,
+        // dataType: 'json',
+        success: function (response) {
+          if (op) {
+            display_user(response);
+          } else {
+            display_users(response);
+          }
+        },
+      });
+    }
+
+    function display_user(data) {
+      console.log(data);
       var text = "";
       console.log(data);
       var tweet_table_html = "";
       set_title();
-      var thead = "<tr><th>Link</th></tr>";
-      for (var i = 0; i < data.length; i++) {
+      var thead = "<tr><th>Word</th><th>Input word(s)</th></tr>";
+      for (var key in data) {
         tweet_table_html +=
-          "<tr><td>" +
-          "<a href='" +
-          data[i]["internal_link"] +
-          "' target='_blank'>" +
-          data[i]["internal_link"] +
-          "</a>" +
-          "</td></tr>";
+          "<tr><td>" + key + "</td><td>" + data[key] + "</td></tr>";
       }
       $("#thead").html(thead);
       $("#tbody").html(tweet_table_html);
       initialize_table();
     }
 
-    function display_entities(data) {
+    function display_users(data) {
       // set_title(data.length);
       var text = "";
+      console.log(data);
       var tweet_table_html = "";
       set_title();
-      data = sortByFrequency(data);
-      var thead = "<tr><th>Entity</th><th>Frequency</th></tr>";
+      var thead = "<tr><th>Email</th></tr>";
       for (var i = 0; i < data.length; i++) {
         tweet_table_html +=
           "<tr><td>" +
-          data[i][0] +
-          "</td>" +
-          "<td>" +
-          data[i][1] +
-          "</td></tr  >";
+          "<a href='/dashboard?op=" +
+          data[i]["email"] +
+          "' target='_blank'>" +
+          data[i]["email"] +
+          "</a>" +
+          "</td></tr>";
       }
       $("#thead").html(thead);
       $("#tbody").html(tweet_table_html);

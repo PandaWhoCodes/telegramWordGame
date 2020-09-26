@@ -12,8 +12,8 @@ from database.database_functions import (
     insert_into_users,
     insert_into_user_data,
     get_user,
+    get_users,
 )
-import logging
 from configparser import ConfigParser
 from flask.json import JSONEncoder
 from datetime import datetime
@@ -22,7 +22,7 @@ from authlib.flask.client import OAuth
 from constants import *
 from six.moves.urllib.parse import urlencode
 from functools import wraps
-from utils import handle_input, send_text
+from utils import handle_input, send_text, get_user_words
 import json
 
 # Getting the environment settings
@@ -30,21 +30,6 @@ parser = ConfigParser()
 parser.read("dev.ini")
 HOST = parser.get("website", "host")
 PORT = int(parser.get("website", "port"))
-
-debug_status = parser.get("settings", "debug")
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# create a file handler
-handler = logging.FileHandler("error.log")
-handler.setLevel(logging.INFO)
-
-# create a logging format
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-# adding the handlers to the logger
-logger.addHandler(handler)
 
 
 class CustomJSONEncoder(JSONEncoder):
@@ -129,10 +114,27 @@ def logout():
 @login_required
 def render_home():
     user = get_user(session[JWT_PAYLOAD]["name"])
-    print(user[0]["id"])
     if len(user) == 0:
         insert_into_users(session[JWT_PAYLOAD]["name"])
     return render_template("bot.html"), 200
+
+
+@app.route("/dashboard")
+def render_dashboard():
+    return render_template("tweets.html"), 200
+
+
+@app.route("/get_users", methods=["GET"])
+def return_users():
+    print("HELLOOO")
+    print(get_users())
+    return jsonify(get_users())
+
+
+@app.route("/get_user", methods=["GET"])
+def return_user():
+    email = request.args.get("email")
+    return jsonify(get_user_words(email))
 
 
 @app.route("/input", methods=["GET", "POST"])
@@ -148,4 +150,4 @@ def add_job():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=debug_status, port=PORT, threaded=True)
+    app.run(host="0.0.0.0", debug=True, port=PORT, threaded=True)

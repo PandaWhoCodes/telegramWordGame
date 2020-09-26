@@ -13,6 +13,7 @@ from database.database_functions import (
     insert_into_user_words,
     get_user,
     insert_into_user_data,
+    get_user_data,
 )
 import random
 
@@ -38,7 +39,7 @@ def get_freq(word):
 
 
 def get_new_word():
-    return "".join(sorted(random.sample(bigwords, 1)[0]))
+    return random.sample(bigwords, 1)[0]
 
 
 def is_possible(og_word, word):
@@ -55,28 +56,57 @@ def is_possible(og_word, word):
     return "valid"
 
 
+def shuffle_word(word):
+    str_var = list(word)
+    random.shuffle(str_var)
+    return "".join(str_var)
+
+
 def handle_commands(command):
     command = command.lower()
     print(command, "COMMAND")
     if command in ["/new", "/skip"]:
         new_word = get_new_word()
-        print(new_word)
         insert_into_user_words(
             get_user(session[JWT_PAYLOAD]["name"])[0]["id"], new_word
         )
+        new_word = shuffle_word(new_word)
+        session["current_word"] = new_word
         return "Your new word is: " + new_word
     elif command == "/start":
-        return "You will get a scrambelled word. Enter as many words as possible </br>Enter <b>/new</b> to get a new word.</br>You can enter a word one by one or seperated by comma."
-    elif command == "/show":
-        return (
-            "Your current word is: "
-            + get_last_user_word(get_user(session[JWT_PAYLOAD]["name"])[0]["id"])[0][
+        return """You will get a scrambelled word. Enter as many words as possible </br>Enter <b>/new</b> to get a new word.</br>Enter <b>/show</b> display your currernt word.</br>Enter <b>/shuffle</b> to suffle your current word.</br></br>You can enter a word one by one or seperated by comma."""
+    elif command == "/shuffle":
+        word = (
+            session["current_word"]
+            if "current_word" in session
+            else get_last_user_word(get_user(session[JWT_PAYLOAD]["name"])[0]["id"])[0][
                 "word"
             ]
         )
-
+        word = shuffle_word(word)
+        return "Your reshuffled word is " + word
+    elif command == "/show":
+        if "current_word" in session:
+            return "Your current word is: " + session["current_word"]
+        else:
+            return get_last_user_word(get_user(session[JWT_PAYLOAD]["name"])[0]["id"])[
+                0
+            ]["word"]
     else:
         return "Wrong Command"
+
+
+def get_user_words(email):
+    data = get_user_data(get_user(email)[0]["id"])
+    final_data = {}
+    for user_word in data:
+        if user_word["word"] in final_data:
+            final_data[user_word["word"]] = (
+                final_data[user_word["word"]] + ", " + user_word["input_word"]
+            )
+        else:
+            final_data[user_word["word"]] = user_word["input_word"]
+    return final_data
 
 
 def send_text(text):
@@ -88,29 +118,29 @@ def split_text(text):
 
 
 def handle_input(message):
-    # try:
-    if message.startswith("/"):
-        return handle_commands(message)
-    else:
-        og_word = get_last_user_word(get_user(session[JWT_PAYLOAD]["name"])[0]["id"])[
-            0
-        ]["word"]
-        bad_words = []
-        for word in split_text(message):
-            is_proper = is_possible(og_word, word)
-            if is_proper == "valid":
-                insert_into_user_data(
-                    get_user(session[JWT_PAYLOAD]["name"])[0]["id"], og_word, word
-                )
-            else:
-                bad_words.append(word + " is " + is_proper)
-        if bad_words:
-            return "</br>".join(bad_words)
+    try:
+        if message.startswith("/"):
+            return handle_commands(message)
         else:
-            return "Input word is valid"
-    # except Exception as e:
-    #     return "Error " + str(e) + "</br>Try /start command to restart"
+            og_word = get_last_user_word(
+                get_user(session[JWT_PAYLOAD]["name"])[0]["id"]
+            )[0]["word"]
+            bad_words = []
+            for word in split_text(message):
+                is_proper = is_possible(og_word, word)
+                if is_proper == "valid":
+                    insert_into_user_data(
+                        get_user(session[JWT_PAYLOAD]["name"])[0]["id"], og_word, word
+                    )
+                else:
+                    bad_words.append(word + " is " + is_proper)
+            if bad_words:
+                return "</br>".join(bad_words)
+            else:
+                return "Input word is valid"
+    except Exception as e:
+        return "Error " + str(e) + "</br>Try /start command to restart"
 
 
 if __name__ == "__main__":
-    print(is_possible("deefgilny", "gil"))
+    print(get_user_words("ufoundashish@gmail.com"))
