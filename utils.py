@@ -14,6 +14,7 @@ from database.database_functions import (
     get_user,
     insert_into_user_data,
     get_user_data,
+    insert_into_logs,
 )
 import random
 
@@ -24,7 +25,7 @@ dictionaryItems = []
 with open("words.txt", "r") as f:
     dictionaryItems = set(f.read().lower().split("\n"))
     for items in dictionaryItems:
-        if len(items) == 9:
+        if len(items) >=6:
             bigwords.add(items)
 
 
@@ -59,7 +60,7 @@ def is_possible(og_word, word):
 def shuffle_word(word):
     str_var = list(word)
     random.shuffle(str_var)
-    return "".join(str_var)
+    return "  ".join(str_var)
 
 
 def handle_commands(command):
@@ -109,6 +110,24 @@ def get_user_words(email):
     return final_data
 
 
+def conversation_log(func):
+    """
+    decorator to log conversations for a user
+    :return: None
+    """
+
+    def wrapper(*args, **kwargs):
+        if JWT_PAYLOAD in session and func.__name__ is not "send_text":
+            insert_into_logs(session[JWT_PAYLOAD]["name"], request.form["text"])
+        elif func.__name__ == "send_text":
+            insert_into_logs(session[JWT_PAYLOAD]["name"], args[0], True)
+        return func(*args, **kwargs)
+
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+
+@conversation_log
 def send_text(text):
     return jsonify({"text": text})
 

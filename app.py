@@ -13,6 +13,7 @@ from database.database_functions import (
     insert_into_user_data,
     get_user,
     get_users,
+    get_conversation,
 )
 from configparser import ConfigParser
 from flask.json import JSONEncoder
@@ -22,7 +23,7 @@ from authlib.flask.client import OAuth
 from constants import *
 from six.moves.urllib.parse import urlencode
 from functools import wraps
-from utils import handle_input, send_text, get_user_words
+from utils import handle_input, send_text, get_user_words, conversation_log
 import json
 
 # Getting the environment settings
@@ -137,14 +138,26 @@ def return_user():
     return jsonify(get_user_words(email))
 
 
+@app.route("/conversation")
+@login_required
+@login_required
+def conversation():
+    """
+    gets the full chat lof of a user
+    :return: json
+    TODO: check why jsonify is done in database functions and not in flask app
+    """
+    return jsonify(get_conversation(session[JWT_PAYLOAD]["name"]))
+
+
 @app.route("/input", methods=["GET", "POST"])
-def add_job():
+@conversation_log
+def get_input():
     """
     Function that handles the API calls
     :return: 200 HTTP code
     """
-    data = request.form  # Extracting json da   ta given to the api
-    print("input", data["text"])
+    data = request.form
     query = data["text"]
     return send_text(handle_input(query))
 

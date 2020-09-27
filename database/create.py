@@ -80,11 +80,20 @@ def create_db():
                                   time timestamp DEFAULT CURRENT_TIMESTAMP,
                                   FOREIGN KEY(user_id) REFERENCES users(id)
                                 ); """
+    sql_create_conversation_log_table = """ 
+                                  CREATE TABLE IF NOT EXISTS conversation_log (
+                                  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                                  username text NOT NULL,
+                                  is_bot boolean,
+                                  convo text,
+                                  time timestamp DEFAULT CURRENT_TIMESTAMP 
+                                ); """
 
     for table_query in [
         users_table,
         user_words_table,
         user_data_table,
+        sql_create_conversation_log_table,
     ]:
         create_tables(conn=connection, create_table_sql=table_query)
 

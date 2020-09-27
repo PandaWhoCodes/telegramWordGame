@@ -73,6 +73,28 @@ def get_user_data(user_id):
     WHERE u.user_id = %s"""
     return run_query(sql, [user_id])
 
+def insert_into_logs(username, text, is_bot=False):
+    """
+
+    :param username:
+    :param text:
+    :param: is_bot:
+    :return:
+    """
+    sql_query = (
+        """INSERT into conversation_log(username,is_bot,convo) VALUES(%s,%s,%s)"""
+    )
+    run_query(sql_query, [username, is_bot, text])
+
+def get_conversation(username):
+    """
+
+    :param username:
+    :return: return all previous conversation for the user
+    """
+    sql_query = """select * from conversation_log where username = %s"""
+    return run_query(sql_query, [username])
+
 
 if __name__ == "__main__":
     print(get_users())

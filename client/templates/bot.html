@@ -65,7 +65,7 @@
 //   set_title();
 
 var input = document.getElementById("msg_input");
-
+get_old_conversation();
 // Execute a function when the user releases a key on the keyboard
 input.addEventListener("keyup", function(event) {
   // Number 13 is the "Enter" key on the keyboard
@@ -103,6 +103,45 @@ function vi(){
 	}
 }
 
+function get_old_conversation()
+    {
+      $.ajax({
+      type: 'GET',
+      url:  "/" + "conversation",
+      // dataType: 'json',
+      success: function(response) {
+        if(response.length)
+        {show_messages(response);
+        }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        alert('error occured');
+      }
+    });
+    }
+  function show_messages(data)
+    {
+      for(var i=0;i<data.length;i++)
+      {
+        // console.log(data[i]["time"]);
+        data[i]["time"] = data[i]["time"].replace("T","UTC");
+        var date = new Date(data[i]["time"]).toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+        date = new Date(date);
+        if(data[i]["is_bot"] == 1)
+        {
+          showBotMessage(data[i]["convo"],date,true);
+        }
+        else
+        {
+          showUserMessage(data[i]["convo"],date,true);
+        }
+      }
+      scrollToBottom("messages");
+    }
+    function scrollToBottom(id){
+   var div = document.getElementById(id);
+   div.scrollTop = div.scrollHeight - div.clientHeight;
+}
 
     function send_message(start=false)
     {
